@@ -1,0 +1,87 @@
+% --- MÔI TRƯỜNG TOÁN ---
+\theoremstyle{plain}
+\newtheorem{theorem}{Định lý}[chapter]
+\newtheorem{proposition}[theorem]{Mệnh đề}
+\newtheorem{corollary}[theorem]{Hệ quả}
+\newtheorem{lemma}[theorem]{Bổ đề}
+
+\renewcommand{\thetheorem}{\thechapter.\arabic{theorem}}
+
+\newtheorem{axiom}{Tiên đề}[chapter]
+\renewcommand{\theaxiom}{\thechapter.\arabic{axiom}}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Định nghĩa}
+\newtheorem{remark}[theorem]{Nhận xét}
+
+\newtheoremstyle{example_style}
+{10pt}{10pt}{\normalfont}{0pt}{\bfseries\itshape}{.}{.5em}%
+{\thmname{#1}\thmnumber{ #2}\thmnote{ (#3)}}
+\theoremstyle{example_style}
+
+\newtheorem{example}{Ví dụ}[chapter] 
+\newtheorem{exercise}{Bài tập}[chapter]
+
+\renewcommand{\theexample}{\thechapter.\arabic{example}}
+
+% --- MÔI TRƯỜNG CHỨNG MINH ---
+\makeatletter
+\renewenvironment{proof}[1][\proofname]{\par
+    \normalfont \topsep6\p@\@plus6\p@\relax
+    \trivlist
+    \item[\hskip\labelsep
+    \bfseries\itshape
+    #1\@addpunct{.}]\ignorespaces
+}{%
+    \endtrivlist\@endpefalse
+}
+\renewcommand{\proofname}{Chứng minh}
+\makeatother
+
+% --- MÀU SẮC VÀ TCOLORBOX --- %
+\usepackage[most]{tcolorbox}
+
+\definecolor{thmBlue}{RGB}{228, 242, 250}
+\definecolor{thmBlueDark}{RGB}{41, 128, 185}
+
+\definecolor{defTeal}{RGB}{225, 242, 242}
+\definecolor{defTealDark}{RGB}{0, 150, 136}
+
+\definecolor{remGrey}{RGB}{232, 236, 241}
+\definecolor{remGreyDark}{RGB}{108, 122, 137}
+
+\definecolor{exePurple}{RGB}{235, 235, 250}
+\definecolor{exePurpleDark}{RGB}{103, 58, 183}
+
+\definecolor{axIndigo}{RGB}{225, 230, 245}
+\definecolor{axIndigoDark}{RGB}{75, 0, 130}
+
+\tcbset{
+    myboxstyle/.style 2 args={
+        enhanced, breakable,
+        frame hidden,
+        boxrule=0pt,
+        sharp corners,
+        borderline west={3pt}{0pt}{#2},
+        colback=#1,
+        top=8pt, bottom=8pt, left=8pt, right=8pt,
+        before skip=12pt, after skip=12pt
+    }
+}
+
+\tcolorboxenvironment{theorem}{myboxstyle={thmBlue}{thmBlueDark}}
+\tcolorboxenvironment{proposition}{myboxstyle={thmBlue}{thmBlueDark}}
+\tcolorboxenvironment{corollary}{myboxstyle={thmBlue}{thmBlueDark}}
+
+\tcolorboxenvironment{definition}{myboxstyle={defTeal}{defTealDark}}
+\tcolorboxenvironment{remark}{myboxstyle={remGrey}{remGreyDark}}
+\tcolorboxenvironment{exercise}{myboxstyle={exePurple}{exePurpleDark}}
+\tcolorboxenvironment{axiom}{myboxstyle={axIndigo}{axIndigoDark}}
+
+\usepackage[colorlinks=true, linkcolor=thmBlueDark, urlcolor=thmBlueDark, citecolor=thmBlueDark, breaklinks=true]{hyperref}
+
+\makeatletter
+\renewcommand{\HyperRaiseLinkHook}{%
+    \setlength{\HyperRaiseLinkLength}{48pt}%
+}
+\makeatother

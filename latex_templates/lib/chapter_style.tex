@@ -1,0 +1,56 @@
+% --- BIẾN MỞ RỘNG CHO CHƯƠNG ---
+\makeatletter
+\newcommand{\chaptersubtitle}[1]{\gdef\@chaptersubtitle{#1}}
+\newcommand{\chapterauthor}[1]{\gdef\@chapterauthor{#1}}
+\newcommand{\chapterhandle}[1]{\gdef\@chapterhandle{#1}}
+
+\gdef\@chaptersubtitle{}
+\gdef\@chapterauthor{Cao Nguyễn Đăng Quang}
+\gdef\@chapterhandle{@tubication}
+
+\newif\ifisstarredchapter
+
+% --- CHƯƠNG ---
+\makechapterstyle{khoatoan}{
+    \setlength{\beforechapskip}{0.8cm} 
+
+    \renewcommand*{\chapterheadstart}{\vspace*{\beforechapskip}}
+
+    \renewcommand*{\printchaptername}{}
+    \renewcommand*{\printchapternum}{\isstarredchapterfalse}
+    \renewcommand*{\printchapternonum}{\isstarredchaptertrue}
+
+    \renewcommand*{\chaptitlefont}{\color{black}\normalfont\fontsize{18}{24}\selectfont\bfseries}
+
+    \renewcommand*{\printchaptertitle}[1]{%
+        {\raggedright\chaptitlefont ##1\par}
+        \ifisstarredchapter\else
+            \ifx\@chaptersubtitle\@empty\else
+                \vspace{0.4cm}
+                {\raggedright\normalsize\bfseries\color{black} \@chaptersubtitle\par}
+            \fi
+        \fi
+    }
+
+    \renewcommand*{\afterchaptertitle}{%
+        \ifisstarredchapter
+            \par\nobreak\vspace*{1cm}
+        \else
+            \vspace{0.5cm} 
+            \hrule height 1.5pt 
+
+            \vfill
+
+            {\raggedleft\normalsize\bfseries\color{black} \@chapterauthor\par}
+            \vspace{0.2cm}
+            {\raggedleft\footnotesize\ttfamily\color{black} \@chapterhandle\par}
+
+            \gdef\@chaptersubtitle{} 
+            \clearpage 
+        \fi
+    }
+}
+\makeatother
+\chapterstyle{khoatoan}
+
+\aliaspagestyle{chapter}{empty}

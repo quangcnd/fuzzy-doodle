@@ -1,0 +1,74 @@
+% --- MINTED + PYGMENTS CODE HIGHLIGHTING (VS Code Palenight v2 - Modular) ---
+% Xuất ảnh CLI:
+%   python -m pygments -O style=palenight -o code.png main.cpp
+%   python -m pygments -O style=palenight,font_name=jetbrains,indent_rainbow=false -o code.png main.cpp
+% Compile LaTeX:
+%   xelatex -shell-escape main.tex
+
+\definecolor{PalenightBg}{HTML}{292D3E}
+\definecolor{PalenightFg}{HTML}{BFC7D5}
+\definecolor{PalenightLineNum}{HTML}{4E5579}
+
+% --- 1. QUẢN LÝ FONT CODE LINH HOẠT ---
+% Mặc định dùng Consolas (đã khai báo trong page_setup.tex).
+% Có thể đổi nhanh toàn cục bằng: \setcodefont{JetBrains Mono} hoặc \setcodefont{Fira Code}
+\def\CodeFontFamily{consolas}
+\newcommand{\setcodefont}[2][customcodefont]{%
+    \expandafter\newfontfamily\csname #1\endcsname{#2}[NFSSFamily=#1]%
+    \gdef\CodeFontFamily{#1}%
+}
+
+% --- 2. BẬT / TẮT INDENT-RAINBOW TRỰC TIẾP TRONG LATEX ---
+% Bật mặc định. Có thể tắt toàn cục bằng \IndentRainbowOff
+% hoặc tắt riêng cho 1 khối bằng \begin{codebox}[no indent rainbow]
+\newif\ifIndentRainbow
+\IndentRainbowtrue
+\newcommand{\IndentRainbowOn}{\IndentRainbowtrue}
+\newcommand{\IndentRainbowOff}{\IndentRainbowfalse}
+
+% --- 3. CẤU HÌNH MINTED V3 & TCOLORBOX ---
+% highlightmode=immediate giúp biên dịch 1 lần (1 pass) lên màu ngay, không hiện <MINTED>
+\usepackage[highlightmode=immediate]{minted}
+\tcbuselibrary{listings, minted, skins, breakable}
+
+% Định dạng màu số dòng theo đúng bảng màu PalenightConfig.LINE_NUM_FG (#4E5579)
+\renewcommand{\theFancyVerbLine}{\textcolor{PalenightLineNum}{\footnotesize\consolas\arabic{FancyVerbLine}}}
+
+\tcbset{
+    indent rainbow/.is if=IndentRainbow,
+    no indent rainbow/.style={indent rainbow=false},
+    linenos/.style={
+        left=22pt,
+        minted options app={,linenos=true,numbersep=6pt}
+    },
+    code lang/.style={
+        minted language=#1
+    }
+}
+
+\newtcblisting{codebox}[1][]{
+    enhanced,
+    breakable,
+    colback=PalenightBg,
+    colupper=PalenightFg,
+    boxrule=0pt,
+    frame hidden,
+    sharp corners,
+    top=5pt, bottom=5pt, left=6pt, right=6pt,
+    before skip=6pt, after skip=6pt,
+    listing only,
+    minted language=cpp,
+    minted style=palenight,
+    minted options={
+        fontfamily=\CodeFontFamily,
+        fontsize=\footnotesize,
+        baselinestretch=1.15,
+        breaklines=true,
+        linenos=false,
+        tabsize=4,
+        showspaces=false,
+        showtabs=false,
+        breakafter={.,;},
+    },
+    #1
+}

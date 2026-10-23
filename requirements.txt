@@ -1,0 +1,4 @@
+textual>=0.40.0
+pygments>=2.15.0
+pillow>=9.0.0
+latexminted>=0.3.0

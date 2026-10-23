@@ -1,9 +1,17 @@
 """Module kết nối các bộ xử lý (Font, Indent-Rainbow, C++ Semantic) vào Pygments Formatters & Lexers."""
 import os
+import sys
+import traceback
 from .config import PalenightConfig, INDENT_LEVELS, INDENT_BG_MAP
 from .fonts import FontRegistry
 from .indent_rainbow import IndentRainbowProcessor
 from .cpp_analyzer import CppSemanticAnalyzer
+
+
+def _palenight_log_error(action: str, err: Exception) -> None:
+    if os.environ.get("PALENIGHT_DEBUG", "").lower() in ("1", "true", "yes"):
+        print(f"[PALENIGHT_DEBUG] Lỗi khi thực hiện {action}: {err}", file=sys.stderr)
+        traceback.print_exc()
 
 
 class FormatterPatcher:
@@ -43,8 +51,8 @@ class FormatterPatcher:
 
             CppLexer.__init__ = _cpp_init
             CppLexer.get_tokens_unprocessed = get_tokens_unprocessed
-        except Exception:
-            pass
+        except Exception as e:
+            _palenight_log_error("patch_cpp_lexer", e)
 
     @classmethod
     def patch_image_formatter(cls):
@@ -201,8 +209,8 @@ class FormatterPatcher:
 
             ImageFormatter._create_drawables = _create_drawables
             ImageFormatter.format = _format
-        except Exception:
-            pass
+        except Exception as e:
+            _palenight_log_error("patch_image_formatter", e)
 
     @classmethod
     def patch_latex_formatter(cls):
@@ -242,7 +250,7 @@ class FormatterPatcher:
                             rf'\colorbox[rgb]{{{bg_rgb}}}{{\vrule width 0pt {vrule_dim}##1}}}}}}'
                         )
                         cmndef = (
-                            rf'\def\{cp}@bc##1{{'
+                            rf'\def\{cp}@{tname}##1{{'
                             rf'\ifcsname ifIndentRainbow\endcsname'
                             rf'\ifIndentRainbow{box_cmd}\else##1\fi'
                             rf'\else{box_cmd}\fi}}'
@@ -254,5 +262,5 @@ class FormatterPatcher:
 
             LatexFormatter.__init__ = _latex_init
             LatexFormatter._create_stylesheet = _latex_create_stylesheet
-        except Exception:
-            pass
+        except Exception as e:
+            _palenight_log_error("patch_latex_formatter", e)

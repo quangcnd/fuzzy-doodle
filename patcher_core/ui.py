@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 import pathlib
 import sys
+from typing import Optional
 
 
 # Bật hiển thị màu ANSI và UTF-8 trên Windows Terminal / CMD
@@ -45,26 +46,31 @@ def print_section(title: str) -> None:
     print(ctext("-" * 78, Colors.BLUE))
 
 
-def _detect_default_latex_project(root_dir: pathlib.Path) -> pathlib.Path:
-    """Tự động dò tìm thư mục Project LaTeX mặc định trên máy hiện tại (không phụ thuộc cứng vào 1 ổ đĩa)."""
+def _detect_default_latex_project(root_dir: pathlib.Path) -> Optional[pathlib.Path]:
+    """Tự động dò tìm thư mục Project LaTeX của người dùng (loại trừ tuyệt đối bản thân repo và thư mục cha)."""
     candidates = [
-        pathlib.Path.cwd(),
-        root_dir.parent,
         pathlib.Path(r"d:\Project\Latex"),
         pathlib.Path(r"c:\Project\Latex"),
         pathlib.Path.home() / "Documents" / "Latex",
+        pathlib.Path.cwd(),
     ]
     for cand in candidates:
         try:
-            if cand.is_dir() and (any(cand.glob("*.tex")) or (cand / "lib" / "codebox.tex").is_file()):
-                return cand.resolve()
+            cand_res = cand.resolve()
+            # Loại trừ nếu là repo này, thư mục cha của repo, hoặc có setup_latex_cpp.py / .git
+            if cand_res == root_dir or root_dir in cand_res.parents or cand_res in root_dir.parents:
+                continue
+            if (cand_res / "setup_latex_cpp.py").is_file() or (cand_res / ".git").is_dir():
+                continue
+            if cand_res.is_dir() and (any(cand_res.glob("*.tex")) or (cand_res / "lib" / "codebox.tex").is_file()):
+                return cand_res
         except OSError:
             continue
-    return pathlib.Path(r"d:\Project\Latex")
+    return None
 
 
 # Các đường dẫn tương đối dựa theo vị trí đặt thư mục bộ công cụ (hoạt động trên mọi máy)
 ROOT_DIR = pathlib.Path(__file__).resolve().parent.parent
 PALENIGHT_SRC_DIR = ROOT_DIR / "palenight_source"
 TEMPLATES_LIB_DIR = ROOT_DIR / "latex_templates" / "lib"
-DEFAULT_LATEX_PROJECT = _detect_default_latex_project(ROOT_DIR)
+DEFAULT_LATEX_PROJECT: Optional[pathlib.Path] = _detect_default_latex_project(ROOT_DIR)

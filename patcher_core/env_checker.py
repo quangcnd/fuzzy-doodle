@@ -4,6 +4,7 @@ from __future__ import annotations
 import importlib.util
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
@@ -139,6 +140,81 @@ class EnvironmentManager:
             if cand.is_file():
                 return cand.resolve()
         return None
+
+    def find_all_miktex_roots(self) -> List[pathlib.Path]:
+        """Dò tìm tất cả các thư mục gốc TEXMF của MiKTeX (UserData, UserInstall, System...)."""
+        roots: List[pathlib.Path] = []
+        seen = set()
+
+        def add_cand(p: Optional[pathlib.Path | str]):
+            if not p:
+                return
+            path = pathlib.Path(p).resolve()
+            if str(path).lower() not in seen and path.is_dir():
+                seen.add(str(path).lower())
+                roots.append(path)
+
+        # 1. kpsewhich latexminted.py
+        kpse_cmd = self.get_miktex_tool("kpsewhich")
+        if kpse_cmd:
+            try:
+                res = subprocess.run(
+                    [str(kpse_cmd), "-format=texmfscripts", "latexminted.py"],
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                    timeout=5,
+                )
+                if res.returncode == 0 and res.stdout.strip():
+                    lm_path = pathlib.Path(res.stdout.strip()).resolve()
+                    if lm_path.is_file() and len(lm_path.parents) >= 3:
+                        add_cand(lm_path.parents[2])
+            except Exception:
+                pass
+
+        # 2. initexmf --report
+        initex_cmd = self.get_miktex_tool("initexmf")
+        if initex_cmd:
+            try:
+                res = subprocess.run(
+                    [str(initex_cmd), "--report"],
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                    timeout=5,
+                )
+                if res.returncode == 0 and res.stdout:
+                    for line in res.stdout.splitlines():
+                        m = re.match(r"^(?:Root\d+|UserData|UserInstall|UserConfig|CommonData|CommonInstall)\s*:\s*(.+)$", line.strip())
+                        if m:
+                            add_cand(m.group(1).strip())
+            except Exception:
+                pass
+
+        # 3. miktex_root_dir suy từ bin dir
+        if self.miktex_root_dir:
+            add_cand(self.miktex_root_dir)
+
+        # 4. Các đường dẫn chuẩn trên Windows
+        local_app = os.environ.get("LOCALAPPDATA", "")
+        app_data = os.environ.get("APPDATA", "")
+        prog_data = os.environ.get("ProgramData", r"C:\ProgramData")
+        prog_files = os.environ.get("ProgramFiles", r"C:\Program Files")
+
+        standard_candidates = [
+            pathlib.Path(local_app) / "MiKTeX" if local_app else None,
+            pathlib.Path(app_data) / "MiKTeX" if app_data else None,
+            pathlib.Path(prog_data) / "MiKTeX" if prog_data else None,
+            pathlib.Path(prog_files) / "MiKTeX" if prog_files else None,
+            pathlib.Path(r"D:\Apps\MikTex"),
+            pathlib.Path(r"C:\Apps\MikTex"),
+        ]
+        for sc in standard_candidates:
+            add_cand(sc)
+
+        return roots
 
     def get_miktex_tool(self, tool_name: str) -> Optional[pathlib.Path]:
         exe_name = f"{tool_name}.exe" if (sys.platform == "win32" and not tool_name.endswith(".exe")) else tool_name
@@ -291,6 +367,8 @@ class EnvironmentManager:
                     [str(initexmf), "--set-config-value=[MPM]AutoInstall=1"],
                     capture_output=True,
                     text=True,
+                    encoding="utf-8",
+                    errors="replace",
                     timeout=15,
                 )
                 print(f"  {ctext('[✔]', Colors.GREEN)} Đã kích hoạt chế độ MiKTeX `AutoInstall=1` (Tự động tải gói thiếu khi compile).")
@@ -307,6 +385,8 @@ class EnvironmentManager:
                 [str(kpsewhich)] + files_to_check,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=30,
             )
             found_lines = [line.strip().lower() for line in proc.stdout.splitlines() if line.strip()]
@@ -343,7 +423,13 @@ class EnvironmentManager:
                 print(f"     {ctext('[!]', Colors.YELLOW)} Không tìm thấy `miktex.exe` hoặc `mpm.exe`, gói `{pkg_id}` sẽ được MiKTeX tự tải ở lần compile đầu tiên.")
                 continue
 
-            res = subprocess.run(install_cmd, capture_output=True, text=True)
+            res = subprocess.run(
+                install_cmd,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+            )
             if res.returncode == 0:
                 print(f"     {ctext('[✔]', Colors.GREEN)} Đã cài đặt thành công gói LaTeX `{pkg_id}`!")
                 installed_any = True
@@ -401,9 +487,11 @@ class EnvironmentManager:
 
         return [e[0] for e in missing_exts]
 
-    def run_all_checks(self, ask_ext_install: bool = True) -> None:
+    def run_all_checks(self, ask_ext_install: bool = True) -> bool:
         """Chạy trọn bộ 4 bước kiểm tra & tự động cài đặt."""
-        self.check_and_report_system_software()
-        self.ensure_python_libraries()
-        self.ensure_miktex_packages()
+        missing_sw = self.check_and_report_system_software()
+        ok_py = self.ensure_python_libraries()
+        ok_mik = self.ensure_miktex_packages()
         self.check_and_offer_vscode_extensions(ask_install=ask_ext_install)
+        has_critical_sw = not any("MiKTeX" in s[0] for s in missing_sw)
+        return bool(ok_py and ok_mik and has_critical_sw)

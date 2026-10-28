@@ -5,8 +5,8 @@
 \newcommand{\chapterhandle}[1]{\gdef\@chapterhandle{#1}}
 
 \gdef\@chaptersubtitle{}
-\gdef\@chapterauthor{Cao Nguyễn Đăng Quang}
-\gdef\@chapterhandle{@tubication}
+\gdef\@chapterauthor{}
+\gdef\@chapterhandle{}
 
 \newif\ifisstarredchapter
 
@@ -41,9 +41,13 @@
 
             \vfill
 
-            {\raggedleft\normalsize\bfseries\color{black} \@chapterauthor\par}
-            \vspace{0.2cm}
-            {\raggedleft\footnotesize\ttfamily\color{black} \@chapterhandle\par}
+            \ifx\@chapterauthor\@empty\else
+                {\raggedleft\normalsize\bfseries\color{black} \@chapterauthor\par}
+            \fi
+            \ifx\@chapterhandle\@empty\else
+                \vspace{0.2cm}
+                {\raggedleft\footnotesize\ttfamily\color{black} \@chapterhandle\par}
+            \fi
 
             \gdef\@chaptersubtitle{} 
             \clearpage 
